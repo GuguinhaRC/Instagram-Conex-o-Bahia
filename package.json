@@ -1,0 +1,12 @@
+{
+  "name": "conexao-social-rp",
+  "version": "1.0.0",
+  "description": "Bot de rede social RP para Discord",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.0.0"
+  }
+}
