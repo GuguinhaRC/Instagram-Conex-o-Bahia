@@ -1,38 +1,79 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
+const { 
+  Client, 
+  GatewayIntentBits, 
+  EmbedBuilder, 
+  REST, 
+  Routes 
+} = require("discord.js");
+
+const commands = require("./commands");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+  intents: [GatewayIntentBits.Guilds]
 });
 
-const TOKEN = process.env.TOKEN;
-
-client.once("ready", () => {
+client.once("ready", async () => {
   console.log(`🤖 Bot ligado como ${client.user.tag}`);
+
+  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+
+  await rest.put(
+    Routes.applicationCommands(client.user.id),
+    { body: commands }
+  );
+
+  console.log("✅ Comandos registrados com sucesso");
 });
 
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
+client.on("interactionCreate", async interaction => {
+  if (!interaction.isChatInputCommand()) return;
 
-  if (message.content.startsWith("/post ")) {
-    const texto = message.content.replace("/post ", "");
+  const user = interaction.user;
+
+  // /post
+  if (interaction.commandName === "post") {
+    const texto = interaction.options.getString("texto");
 
     const embed = new EmbedBuilder()
-      .setAuthor({
-        name: message.author.username,
-        iconURL: message.author.displayAvatarURL()
-      })
+      .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
       .setDescription(texto)
-      .setColor(0x2ecc71)
-      .setFooter({ text: "Conexão Bahia RP" })
+      .setColor("#00aaff")
       .setTimestamp();
 
-    message.channel.send({ embeds: [embed] });
-    message.delete();
+    return interaction.reply({ embeds: [embed] });
+  }
+
+  // /postimg
+  if (interaction.commandName === "postimg") {
+    const legenda = interaction.options.getString("legenda");
+    const imagem = interaction.options.getAttachment("imagem");
+
+    const embed = new EmbedBuilder()
+      .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
+      .setDescription(legenda)
+      .setImage(imagem.url)
+      .setColor("#ff9900")
+      .setTimestamp();
+
+    return interaction.reply({ embeds: [embed] });
+  }
+
+  // /curtir
+  if (interaction.commandName === "curtir") {
+    return interaction.reply("❤️ Curtido!");
+  }
+
+  // /comentar
+  if (interaction.commandName === "comentar") {
+    const texto = interaction.options.getString("texto");
+    return interaction.reply(`💬 **${user.username}:** ${texto}`);
+  }
+
+  // /denunciar
+  if (interaction.commandName === "denunciar") {
+    const motivo = interaction.options.getString("motivo");
+    return interaction.reply(`🚨 Denúncia enviada: **${motivo}**`);
   }
 });
 
-client.login(TOKEN);
+client.login(process.env.TOKEN);
